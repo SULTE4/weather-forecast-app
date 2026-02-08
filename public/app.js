@@ -5,6 +5,7 @@ const API_URL = window.location.origin;
 let authToken = localStorage.getItem('authToken');
 let currentWeatherData = null;
 let currentUser = null;
+let currentCity = null;
 
 // DOM Elements
 const authSection = document.getElementById('authSection');
@@ -20,8 +21,13 @@ const citySearch = document.getElementById('citySearch');
 const searchBtn = document.getElementById('searchBtn');
 const currentWeather = document.getElementById('currentWeather');
 const saveLocationBtn = document.getElementById('saveLocationBtn');
+const viewForecastBtn = document.getElementById('viewForecastBtn');
 const refreshLocationsBtn = document.getElementById('refreshLocationsBtn');
 const locationsList = document.getElementById('locationsList');
+const forecastSection = document.getElementById('forecastSection');
+const closeForecastBtn = document.getElementById('closeForecastBtn');
+const forecastCity = document.getElementById('forecastCity');
+const forecastDays = document.getElementById('forecastDays');
 
 // Profile Modal Elements
 const profileModal = document.getElementById('profileModal');
@@ -151,6 +157,7 @@ logoutBtn.addEventListener('click', () => {
         currentUser = null;
         localStorage.removeItem('authToken');
         currentWeather.style.display = 'none';
+        forecastSection.style.display = 'none';
         showAuth();
     }
 });
@@ -296,8 +303,10 @@ async function searchWeather() {
 
         if (response.ok) {
             currentWeatherData = data;
+            currentCity = city;
             displayWeather(data);
             errorDiv.textContent = '';
+            forecastSection.style.display = 'none'; // Hide forecast when new search
         } else {
             errorDiv.textContent = data.error || 'Failed to fetch weather';
             currentWeather.style.display = 'none';
@@ -322,6 +331,88 @@ function displayWeather(data) {
     
     // Scroll to weather display
     currentWeather.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// View Forecast
+viewForecastBtn.addEventListener('click', async () => {
+    if (!currentCity) return;
+    
+    await fetchAndDisplayForecast(currentCity);
+});
+
+closeForecastBtn.addEventListener('click', () => {
+    forecastSection.style.display = 'none';
+});
+
+// Fetch and Display Forecast
+async function fetchAndDisplayForecast(city) {
+    try {
+        const response = await fetch(`${API_URL}/api/weather/forecast?city=${encodeURIComponent(city)}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            displayForecast(data);
+        } else {
+            showNotification(data.error || 'Failed to fetch forecast', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    }
+}
+
+// Display Forecast (Grouped by Day)
+function displayForecast(data) {
+    forecastCity.textContent = `${data.city}, ${data.country}`;
+    
+    // Group forecast by day
+    const groupedByDay = {};
+    
+    data.forecast.forEach(item => {
+        const date = new Date(item.date);
+        const dayKey = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        
+        if (!groupedByDay[dayKey]) {
+            groupedByDay[dayKey] = {
+                date: date,
+                items: []
+            };
+        }
+        
+        groupedByDay[dayKey].items.push({
+            time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            ...item
+        });
+    });
+    
+    // Display grouped forecast
+    forecastDays.innerHTML = Object.entries(groupedByDay).map(([dayName, dayData]) => `
+        <div class="forecast-day">
+            <div class="forecast-day-header">
+                <div class="forecast-day-name">📅 ${dayName}</div>
+                <div class="forecast-day-date">${dayData.items.length} forecasts</div>
+            </div>
+            <div class="forecast-items">
+                ${dayData.items.map(item => `
+                    <div class="forecast-item">
+                        <div class="forecast-time">${item.time}</div>
+                        <img class="forecast-icon" src="https://openweathermap.org/img/wn/${item.icon}@2x.png" alt="${item.description}">
+                        <div class="forecast-temp">${Math.round(item.temperature)}°C</div>
+                        <div class="forecast-desc">${item.description}</div>
+                        <div class="forecast-details">
+                            <div>💧 ${item.humidity}%</div>
+                            <div>💨 ${item.wind_speed} m/s</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+    
+    forecastSection.style.display = 'block';
+    forecastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Save Location
@@ -390,7 +481,8 @@ function displayLocations(locations) {
             ${location.nickname ? `<p><strong>🏷️ ${location.nickname}</strong></p>` : ''}
             ${location.latitude && location.longitude ? `<p><small>🌐 ${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}</small></p>` : ''}
             <div class="location-actions">
-                <button class="btn btn-primary" onclick="viewLocationWeather('${location.city}')">View Weather</button>
+                <button class="btn btn-primary" onclick="viewLocationWeather('${location.city}')">Current Weather</button>
+                <button class="btn btn-secondary" onclick="viewLocationForecast('${location.city}')">5-Day Forecast</button>
                 <button class="btn btn-danger" onclick="deleteLocation('${location._id}')">Delete</button>
             </div>
         </div>
@@ -401,6 +493,15 @@ function displayLocations(locations) {
 window.viewLocationWeather = async (city) => {
     citySearch.value = city;
     await searchWeather();
+};
+
+// View Location Forecast
+window.viewLocationForecast = async (city) => {
+    citySearch.value = city;
+    await searchWeather();
+    setTimeout(async () => {
+        await fetchAndDisplayForecast(city);
+    }, 500);
 };
 
 // Delete Location
