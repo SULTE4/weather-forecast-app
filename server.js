@@ -1,19 +1,22 @@
 require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
-const SESSION_SECRET = process.env.SESSION_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 
 const bcrypt = require('bcryptjs');
 const saltRounds = 12;
+const jwt = require('jsonwebtoken');
 
 const express = require('express');
-const session = require('express-session');
 const cors = require('cors');
 const axios = require('axios');
 const { connectDB } = require('./config/db');
 const { User } = require('./models/User');
 const { Location } = require('./models/Location');
+const requireAuth = require('./middleware/auth');
+const { validateRegister, validateLogin, validateLocation } = require('./middleware/validation');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
@@ -21,21 +24,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
-app.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        maxAge: 60 * 60 * 1000
-    }
-}));
-
-// Auth middleware
-const requireAuth = (req, res, next) => {
-    if (!req.session.userId) return res.status(401).json({ error: 'Unauthorized' });
-    next();
-};
 
 let db;
 let usercollection;
@@ -64,18 +52,19 @@ async function comparePass(password, hashed) {
     }
 }
 
+// Generate JWT token
+function generateToken(userId) {
+    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+}
+
 const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-// ==================== AUTH ROUTES ====================
+// ==================== AUTH ROUTES (Public) ====================
 
 // Register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', validateRegister, async (req, res) => {
     try {
         const { name, email, password } = req.body;
-
-        if (!name || !email || !password) {
-            return res.status(400).json({ error: 'All fields required' });
-        }
 
         if (!re.test(email)){
             return res.status(400).json({ error: 'incorrect email form' });
@@ -88,9 +77,11 @@ app.post('/api/auth/register', async (req, res) => {
         const newUser = new User({ name, email, password: hashed });
         const saved = await newUser.save();
 
-        req.session.userId = saved._id;
+        const token = generateToken(saved._id);
+        
         res.status(201).json({ 
             message: 'User registered successfully',
+            token,
             user: { id: saved._id, name: saved.name, email: saved.email }
         });
     } catch (err) {
@@ -99,7 +90,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', validateLogin, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -108,9 +99,11 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        req.session.userId = user._id;
+        const token = generateToken(user._id);
+        
         res.json({ 
-            message: 'Logged in', 
+            message: 'Logged in',
+            token,
             user: { id: user._id, name: user.name, email } 
         });
     } catch (err) {
@@ -118,20 +111,13 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// Logout
-app.post('/api/auth/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) return res.status(500).json({ error: 'Logout failed' });
-        res.json({ message: 'Logged out' });
-    });
-});
-
-// ==================== USER ROUTES ====================
+// ==================== USER ROUTES (Private) ====================
 
 // Get profile
 app.get('/api/users/profile', requireAuth, async (req, res) => {
     try{
-        const user = await User.findById(req.session.userId).select('-password');
+        const user = await User.findById(req.userId).select('-password');
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.json(user);
     } catch(err){
         res.status(400).json({ error: err.message });
@@ -142,7 +128,7 @@ app.get('/api/users/profile', requireAuth, async (req, res) => {
 app.put('/api/users/profile', requireAuth, async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        const userId = req.session.userId;
+        const userId = req.userId;
 
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -163,15 +149,13 @@ app.put('/api/users/profile', requireAuth, async (req, res) => {
     }
 });
 
-// ==================== LOCATION ROUTES ====================
+// ==================== LOCATION ROUTES (Private) ====================
 
 // Create location
-app.post('/api/locations', requireAuth, async (req, res) => {
+app.post('/api/locations', requireAuth, validateLocation, async (req, res) => {
     try {
         const { city, country, latitude, longitude, nickname, isFavorite } = req.body;
-        const userId = req.session.userId;
-
-        if (!city) return res.status(400).json({ error: 'City is required' });
+        const userId = req.userId;
 
         const location = new Location({
             userId,
@@ -196,7 +180,7 @@ app.post('/api/locations', requireAuth, async (req, res) => {
 // Get all locations
 app.get('/api/locations', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.userId;
+        const userId = req.userId;
         const locations = await Location.find({ userId }).sort({ createdAt: -1 });
         res.json({
             count: locations.length,
@@ -211,7 +195,7 @@ app.get('/api/locations', requireAuth, async (req, res) => {
 app.get('/api/locations/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.session.userId;
+        const userId = req.userId;
 
         const location = await Location.findOne({ _id: id, userId });
         if (!location) return res.status(404).json({ error: 'Location not found' });
@@ -226,7 +210,7 @@ app.get('/api/locations/:id', requireAuth, async (req, res) => {
 app.put('/api/locations/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.session.userId;
+        const userId = req.userId;
         const updates = req.body;
 
         const location = await Location.findOneAndUpdate(
@@ -250,7 +234,7 @@ app.put('/api/locations/:id', requireAuth, async (req, res) => {
 app.delete('/api/locations/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.session.userId;
+        const userId = req.userId;
 
         const location = await Location.findOneAndDelete({ _id: id, userId });
         if (!location) return res.status(404).json({ error: 'Location not found' });
@@ -261,7 +245,7 @@ app.delete('/api/locations/:id', requireAuth, async (req, res) => {
     }
 });
 
-// ==================== WEATHER ROUTES ====================
+// ==================== WEATHER ROUTES (Private) ====================
 
 // Get current weather
 app.get('/api/weather/current', requireAuth, async (req, res) => {
@@ -332,6 +316,9 @@ app.get('/api/weather/forecast', requireAuth, async (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'Weather Forecast API is running' });
 });
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // Start server
 async function run() {
