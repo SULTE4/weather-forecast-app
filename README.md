@@ -1,16 +1,16 @@
 # 🌦️ Weather Forecast Application
 
-A full-stack weather forecast web application built with Node.js, Express, MongoDB, and OpenWeatherMap API. Users can register, login, search for weather information, and save their favorite locations.
+A full-stack weather forecast web application built with Node.js, Express, MongoDB, and OpenWeatherMap API. Users can register, login with JWT authentication, search for weather information, and save their favorite locations.
 
 ## 📋 Project Overview
 
 This project is a complete weather forecast website that allows users to:
-- Register and login with secure session-based authentication
+- Register and login with secure JWT token authentication
 - Search current weather conditions for any city worldwide
-- View detailed weather information (temperature, humidity, wind speed, etc.)
+- View detailed weather information (temperature, humidity, wind speed, pressure)
+- View 5-day weather forecasts
 - Save favorite locations for quick access
 - Manage saved locations (view, update, delete)
-- Access 5-day weather forecasts
 
 ## 🛠️ Technologies Used
 
@@ -19,9 +19,11 @@ This project is a complete weather forecast website that allows users to:
 - **Express.js** - Web application framework
 - **MongoDB** - NoSQL database
 - **Mongoose** - MongoDB object modeling
-- **bcryptjs** - Password hashing
-- **express-session** - Session management
+- **bcryptjs** - Password hashing (saltRounds: 12)
+- **jsonwebtoken** - JWT authentication
+- **Joi** - Data validation
 - **axios** - HTTP client for API requests
+- **cors** - Cross-origin resource sharing
 
 ### Frontend
 - **HTML5** - Structure
@@ -29,7 +31,7 @@ This project is a complete weather forecast website that allows users to:
 - **Vanilla JavaScript** - Dynamic functionality
 
 ### External API
-- **OpenWeatherMap API** - Real-time weather data
+- **OpenWeatherMap API** - Real-time weather data and forecasts
 
 ## 📁 Project Structure
 
@@ -37,6 +39,10 @@ This project is a complete weather forecast website that allows users to:
 weather-forecast-app/
 ├── config/
 │   └── db.js                 # Database configuration
+├── middleware/
+│   ├── auth.js              # JWT authentication middleware
+│   ├── validation.js        # Joi validation middleware
+│   └── errorHandler.js      # Global error handler
 ├── models/
 │   ├── User.js              # User schema
 │   └── Location.js          # Location schema
@@ -47,7 +53,7 @@ weather-forecast-app/
 ├── .env.example             # Environment variables template
 ├── .gitignore               # Git ignore rules
 ├── package.json             # Project dependencies
-├── server.js                # Main server file
+├── server.js                # Main server file with all routes
 └── README.md                # Project documentation
 ```
 
@@ -55,8 +61,8 @@ weather-forecast-app/
 
 ### Prerequisites
 - Node.js (v14 or higher)
-- MongoDB (local or cloud instance)
-- OpenWeatherMap API key
+- MongoDB (local or cloud instance like MongoDB Atlas)
+- OpenWeatherMap API key (free tier available)
 
 ### Installation Steps
 
@@ -77,7 +83,7 @@ weather-forecast-app/
    ```env
    PORT=5000
    MONGO_URI=mongodb://localhost:27017/weatherDB
-   SESSION_SECRET=your_secure_session_secret_key
+   JWT_SECRET=your_secure_jwt_secret_key_here_make_it_long_and_random
    WEATHER_API_KEY=your_openweathermap_api_key
    NODE_ENV=development
    ```
@@ -85,12 +91,14 @@ weather-forecast-app/
 4. **Get OpenWeatherMap API Key**
    - Sign up at [OpenWeatherMap](https://openweathermap.org/api)
    - Get your free API key from the dashboard
-   - Add it to your `.env` file
+   - Add it to your `.env` file as `WEATHER_API_KEY`
 
 5. **Start MongoDB**
    ```bash
    # If using local MongoDB
    mongod
+   
+   # Or use MongoDB Atlas cloud connection string
    ```
 
 6. **Run the application**
@@ -98,7 +106,7 @@ weather-forecast-app/
    # Production mode
    npm start
    
-   # Development mode (with nodemon)
+   # Development mode (with nodemon auto-reload)
    npm run dev
    ```
 
@@ -115,9 +123,8 @@ weather-forecast-app/
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
-| POST | `/api/auth/register` | Register a new user | Public |
+| POST | `/api/auth/register` | Register a new user (hashed password) | Public |
 | POST | `/api/auth/login` | Authenticate user | Public |
-| POST | `/api/auth/logout` | Logout current user | Public |
 
 #### Register User
 **POST** `/api/auth/register`
@@ -133,6 +140,7 @@ weather-forecast-app/
 // Response (201 Created)
 {
   "message": "User registered successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "60d5ec49f1b2c72b8c8e4f1a",
     "name": "John Doe",
@@ -154,6 +162,7 @@ weather-forecast-app/
 // Response (200 OK)
 {
   "message": "Logged in",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "60d5ec49f1b2c72b8c8e4f1a",
     "name": "John Doe",
@@ -169,8 +178,15 @@ weather-forecast-app/
 | GET | `/api/users/profile` | Get logged-in user profile | Private |
 | PUT | `/api/users/profile` | Update user profile | Private |
 
+**Note:** All private endpoints require `Authorization: Bearer <token>` header
+
 #### Get User Profile
 **GET** `/api/users/profile`
+
+```bash
+# Headers
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
 ```json
 // Response (200 OK)
@@ -205,15 +221,15 @@ weather-forecast-app/
 }
 ```
 
-### Location Routes (Private)
+### Location Routes (Private - Second Resource)
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
-| POST | `/api/locations` | Create a new location | Private |
-| GET | `/api/locations` | Get all user locations | Private |
-| GET | `/api/locations/:id` | Get a specific location | Private |
-| PUT | `/api/locations/:id` | Update a location | Private |
-| DELETE | `/api/locations/:id` | Delete a location | Private |
+| POST | `/api/locations` | Create a new resource | Private |
+| GET | `/api/locations` | Get all user resources | Private |
+| GET | `/api/locations/:id` | Get a specific resource | Private |
+| PUT | `/api/locations/:id` | Update a resource | Private |
+| DELETE | `/api/locations/:id` | Delete a resource | Private |
 
 #### Create Location
 **POST** `/api/locations`
@@ -271,7 +287,7 @@ weather-forecast-app/
 }
 ```
 
-### Weather Routes (Private)
+### Weather Routes (Private - External API Integration)
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
@@ -317,7 +333,7 @@ weather-forecast-app/
       "humidity": 65,
       "wind_speed": 4.5
     }
-    // ... more forecast items
+    // ... more forecast items (40 entries for 5 days)
   ]
 }
 ```
@@ -326,8 +342,8 @@ weather-forecast-app/
 
 All endpoints return appropriate HTTP status codes:
 
-- **400 Bad Request** - Invalid input data
-- **401 Unauthorized** - Not authenticated
+- **400 Bad Request** - Invalid input data / validation failed
+- **401 Unauthorized** - Not authenticated / invalid token
 - **404 Not Found** - Resource not found
 - **409 Conflict** - Duplicate resource (e.g., email already exists)
 - **500 Internal Server Error** - Server error
@@ -341,66 +357,118 @@ All endpoints return appropriate HTTP status codes:
 
 ## 🔐 Authentication & Security
 
+- **JWT Tokens**: Secure user authentication with 7-day expiration
 - **Password Hashing**: bcryptjs with salt rounds of 12
-- **Session Management**: express-session with httpOnly cookies
-- **Email Validation**: Regex pattern validation
-- **Protected Routes**: Session-based authentication middleware
+- **Protected Routes**: JWT middleware verifies tokens on all private endpoints
+- **Email Validation**: Regex pattern validation + Joi validation
+- **Input Validation**: Joi library for all user inputs
+- **Error Handling**: Global error handler middleware
+
+## ✅ Validation & Error Handling
+
+### Input Validation (Joi)
+- **Registration**: name (3-50 chars), valid email, password (min 6 chars)
+- **Login**: valid email, password required
+- **Location**: city required, optional fields validated
+
+### Error Handling
+- Meaningful error messages (400 for bad requests, 401 for unauthorized)
+- Global error-handling middleware
+- Mongoose validation errors
+- JWT token errors
+- Duplicate key errors (409)
 
 ## 🌐 Deployment
 
-The application can be deployed to platforms like:
+The application is ready to deploy to platforms like Render, Railway, or Replit.
 
-### Render
+### Render Deployment
 1. Create a new Web Service
 2. Connect your GitHub repository
-3. Add environment variables
+3. Add environment variables:
+   - `MONGO_URI` (use MongoDB Atlas)
+   - `JWT_SECRET`
+   - `WEATHER_API_KEY`
+   - `NODE_ENV=production`
 4. Deploy
 
-### Railway
+### Railway Deployment
 1. Create a new project
 2. Connect your GitHub repository
-3. Add environment variables
+3. Add environment variables (same as above)
 4. Deploy automatically
 
-### Environment Variables for Deployment
+### Environment Variables for Production
 ```env
 PORT=5000
-MONGO_URI=your_mongodb_atlas_uri
-SESSION_SECRET=your_secure_secret
-WEATHER_API_KEY=your_api_key
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/weatherDB
+JWT_SECRET=your_super_secure_random_secret_key_here
+WEATHER_API_KEY=your_api_key_from_openweathermap
 NODE_ENV=production
 ```
 
 ## 📝 Features
 
 ✅ User registration and authentication
-✅ Session-based security
-✅ Password hashing with bcryptjs
+✅ JWT token-based security (7-day expiration)
+✅ Password hashing with bcryptjs (saltRounds: 12)
+✅ Middleware for token verification
+✅ Joi validation for all inputs
 ✅ Real-time weather data from OpenWeatherMap API
+✅ 5-day weather forecast integration
 ✅ Save and manage favorite locations
-✅ Responsive design
-✅ Error handling and validation
+✅ Responsive gradient design
+✅ Global error handling middleware
 ✅ RESTful API architecture
-✅ MongoDB database integration
+✅ MongoDB + Mongoose integration
 ✅ Clean and modular code structure
+✅ Comprehensive API documentation
 
-## 🎯 Project Requirements Met
+## 🎯 Final Project Requirements Coverage
 
-| Requirement | Points | Status |
-|-------------|--------|--------|
-| Project Setup | 10 | ✅ Complete |
-| Database & Models | 10 | ✅ Complete |
-| API Endpoints & Routing | 20 | ✅ Complete |
-| Authentication & Security | 10 | ✅ Complete |
-| Validation & Error Handling | 5 | ✅ Complete |
-| Deployment | 10 | 🔄 Ready |
-| Defence | 35 | 📝 Pending |
+| Requirement | Points | Status | Implementation |
+|-------------|--------|--------|----------------|
+| **1. Project Setup** | 10 | ✅ | Node.js, Express, modular structure, README with docs |
+| **2. Database & Models** | 10 | ✅ | MongoDB, Mongoose, User + Location collections |
+| **3. API Endpoints** | 20 | ✅ | Auth routes (register, login), User routes (profile), Location CRUD, Weather API |
+| **4. Auth & Security** | 10 | ✅ | JWT tokens, bcrypt hashing, token verification middleware |
+| **5. Validation & Error** | 5 | ✅ | Joi validation, global error handler, meaningful error messages |
+| **6. Deployment** | 10 | 🔄 | Ready for Render/Railway deployment |
+| **7. Defence** | 35 | 📝 | Pending presentation |
 
-**Total**: 65/100 points (implementation complete)
+**Total**: 65/100 points (implementation complete, defence pending)
+
+### Detailed Requirements Met:
+
+✅ **Project Setup (10 pts)**
+- Node.js and Express.js server
+- Modular structure (config, models, middleware, public)
+- README.md with overview, setup, and API documentation
+
+✅ **Database & Models (10 pts)**
+- MongoDB database
+- Mongoose for schema creation
+- Two collections: User (name, email, password) and Location (city, country, lat, lon, etc.)
+
+✅ **API Endpoints & Routing (20 pts)**
+- Auth routes: POST /api/auth/register, POST /api/auth/login
+- User routes: GET /api/users/profile, PUT /api/users/profile
+- Location routes: POST, GET, GET/:id, PUT/:id, DELETE/:id
+- External API: OpenWeatherMap integration (current + forecast)
+
+✅ **Authentication & Security (10 pts)**
+- JWT for secure authentication
+- Protected private endpoints with middleware
+- bcrypt password hashing (saltRounds: 12)
+
+✅ **Validation & Error Handling (5 pts)**
+- Joi validation for email, password, and all inputs
+- Error handling with appropriate status codes (400, 401, 404, 409, 500)
+- Global error-handling middleware
 
 ## 🧪 Testing the API
 
-You can test the API using tools like Postman or curl:
+### Using cURL:
 
 ```bash
 # Register a new user
@@ -408,22 +476,34 @@ curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"test@example.com","password":"test123"}'
 
-# Login
+# Login and save token
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}' \
-  -c cookies.txt
+  -d '{"email":"test@example.com","password":"test123"}'
 
-# Get weather (with session)
+# Get weather (replace YOUR_TOKEN with actual token)
 curl -X GET "http://localhost:5000/api/weather/current?city=London" \
-  -b cookies.txt
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Save location
+curl -X POST http://localhost:5000/api/locations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"city":"London","country":"GB"}'
 ```
+
+### Using Postman:
+1. Import the endpoints
+2. Set Authorization type to "Bearer Token"
+3. Add token from login response
+4. Test all endpoints
 
 ## 👨‍💻 Author
 
 **Sultanbek**
 - GitHub: [@SULTE4](https://github.com/SULTE4)
 - Location: Astana, Kazakhstan
+- Bio: Software Engineer | Algorithms | Microservices | Design Patterns
 
 ## 📄 License
 
@@ -432,9 +512,12 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgments
 
 - OpenWeatherMap for providing the weather API
-- MongoDB for the database
+- MongoDB for the database solution
 - Express.js community for excellent documentation
+- JWT for secure authentication
 
 ---
 
-**Note**: This project was created as a final project for a Node.js and Express.js course. It demonstrates proficiency in full-stack development, API integration, authentication, and database management.
+**Project Status**: ✅ Complete and ready for deployment
+
+**Note**: This project was created as a final project for a Node.js and Express.js course. It demonstrates proficiency in full-stack development, API integration, JWT authentication, validation, error handling, and database management.
