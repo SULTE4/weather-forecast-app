@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">☁️ Weather Forecast</h1>
+            <div class="nav-links">
+                <button id="logoutBtn" class="btn btn-secondary" style="display: none;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Authentication Section -->
+        <div id="authSection" class="auth-section">
+            <div class="auth-container">
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Login</button>
+                    <button class="tab-btn" data-tab="register">Register</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form active">
+                    <h2>Welcome Back</h2>
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <div id="loginError" class="error-message"></div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="registerForm" class="auth-form">
+                    <h2>Create Account</h2>
+                    <div class="form-group">
+                        <label for="registerName">Name</label>
+                        <input type="text" id="registerName" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register</button>
+                    <div id="registerError" class="error-message"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main App Section -->
+        <div id="appSection" style="display: none;">
+            <!-- User Profile -->
+            <div class="profile-section">
+                <h2>Welcome, <span id="userName">User</span>!</h2>
+            </div>
+
+            <!-- Weather Search -->
+            <div class="weather-search">
+                <h2>Search Weather</h2>
+                <div class="search-box">
+                    <input type="text" id="citySearch" placeholder="Enter city name...">
+                    <button id="searchBtn" class="btn btn-primary">Search</button>
+                </div>
+                <div id="searchError" class="error-message"></div>
+            </div>
+
+            <!-- Current Weather Display -->
+            <div id="currentWeather" class="weather-display" style="display: none;">
+                <h2>Current Weather</h2>
+                <div class="weather-card">
+                    <div class="weather-main">
+                        <h3 id="weatherCity"></h3>
+                        <img id="weatherIcon" src="" alt="Weather icon">
+                        <p class="temperature" id="weatherTemp"></p>
+                        <p class="description" id="weatherDesc"></p>
+                    </div>
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <span class="label">Feels Like:</span>
+                            <span id="weatherFeels"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Humidity:</span>
+                            <span id="weatherHumidity"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Wind Speed:</span>
+                            <span id="weatherWind"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Pressure:</span>
+                            <span id="weatherPressure"></span>
+                        </div>
+                    </div>
+                    <button id="saveLocationBtn" class="btn btn-secondary">Save Location</button>
+                </div>
+            </div>
+
+            <!-- Saved Locations -->
+            <div class="locations-section">
+                <h2>Saved Locations</h2>
+                <button id="refreshLocationsBtn" class="btn btn-secondary">Refresh</button>
+                <div id="locationsList" class="locations-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
