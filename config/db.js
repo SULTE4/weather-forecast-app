@@ -1,13 +1,23 @@
+require('dotenv').config();
+
+const MONGO_URI = process.env.MONGO_URI;
 const mongoose = require('mongoose');
+const {MongoClient, ObjectId} = require('mongodb');
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ MongoDB connected successfully');
-  } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
-    process.exit(1);
-  }
-};
+const dbName = 'weatherDB';
+const client = new MongoClient(MONGO_URI);
 
-module.exports = connectDB;
+async function connectDB(){
+    try{
+        await client.connect();
+        await mongoose.connect(MONGO_URI);
+        const db = client.db(dbName);
+        console.log('mongodb connected successfully');
+        return db;
+    } catch(err){
+        console.log('failed to connect to mongodb');
+        throw err
+    }
+}
+
+module.exports = { connectDB };
