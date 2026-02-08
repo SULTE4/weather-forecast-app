@@ -8,18 +8,11 @@ if (!MONGO_URI) {
     process.exit(1);
 }
 
-// MongoDB connection options for Atlas
+// MongoDB connection options for Atlas (cleaned up, no deprecated options)
 const mongoOptions = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     family: 4, // Use IPv4, skip trying IPv6
-    retryWrites: true,
-    w: 'majority',
-    tls: true,
-    tlsAllowInvalidCertificates: false,
-    authSource: 'admin'
 };
 
 async function connectDB() {
@@ -38,6 +31,7 @@ async function connectDB() {
         
         const db = client.db();
         console.log('✅ Database name:', db.databaseName);
+        console.log('✅ MongoDB connection established!');
         
         return db;
     } catch (err) {
@@ -48,8 +42,7 @@ async function connectDB() {
         if (err.message.includes('authentication failed')) {
             console.error('\n💡 Fix: Check your MongoDB username and password');
             console.error('   - Go to MongoDB Atlas → Database Access');
-            console.error('   - Verify username: sultanbekzhumagaliev_db_user');
-            console.error('   - Reset password if needed');
+            console.error('   - Verify username and reset password if needed');
         } else if (err.message.includes('ENOTFOUND') || err.message.includes('ETIMEDOUT')) {
             console.error('\n💡 Fix: Check your network connection and MongoDB cluster status');
         } else if (err.message.includes('SSL') || err.message.includes('TLS')) {
