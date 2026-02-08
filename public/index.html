@@ -11,8 +11,11 @@
     <nav class="navbar">
         <div class="container">
             <h1 class="logo">☁️ Weather Forecast</h1>
-            <div class="nav-links">
-                <button id="logoutBtn" class="btn btn-secondary" style="display: none;">Logout</button>
+            <div class="nav-links" id="navLinks">
+                <button id="profileBtn" class="btn btn-secondary" style="display: none;">
+                    <span id="navUserName">Profile</span>
+                </button>
+                <button id="logoutBtn" class="btn btn-danger" style="display: none;">Logout</button>
             </div>
         </div>
     </nav>
@@ -30,13 +33,14 @@
                 <!-- Login Form -->
                 <form id="loginForm" class="auth-form active">
                     <h2>Welcome Back</h2>
+                    <p class="subtitle">Login to check weather conditions</p>
                     <div class="form-group">
                         <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" required>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" required>
                     </div>
                     <div class="form-group">
                         <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" required>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Login</button>
                     <div id="loginError" class="error-message"></div>
@@ -45,17 +49,18 @@
                 <!-- Register Form -->
                 <form id="registerForm" class="auth-form">
                     <h2>Create Account</h2>
+                    <p class="subtitle">Start tracking weather in your favorite cities</p>
                     <div class="form-group">
                         <label for="registerName">Name</label>
-                        <input type="text" id="registerName" required minlength="3">
+                        <input type="text" id="registerName" placeholder="Enter your name" required minlength="3">
                     </div>
                     <div class="form-group">
                         <label for="registerEmail">Email</label>
-                        <input type="email" id="registerEmail" required>
+                        <input type="email" id="registerEmail" placeholder="Enter your email" required>
                     </div>
                     <div class="form-group">
                         <label for="registerPassword">Password</label>
-                        <input type="password" id="registerPassword" required minlength="6">
+                        <input type="password" id="registerPassword" placeholder="Min 6 characters" required minlength="6">
                     </div>
                     <button type="submit" class="btn btn-primary">Register</button>
                     <div id="registerError" class="error-message"></div>
@@ -65,23 +70,24 @@
 
         <!-- Main App Section -->
         <div id="appSection" style="display: none;">
-            <!-- User Profile -->
-            <div class="profile-section">
-                <h2>Welcome, <span id="userName">User</span>!</h2>
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <h2>Welcome back, <span id="userName">User</span>! 👋</h2>
+                <p>Check weather conditions and manage your favorite locations</p>
             </div>
 
             <!-- Weather Search -->
-            <div class="weather-search">
-                <h2>Search Weather</h2>
+            <div class="weather-search card">
+                <h2>🔍 Search Weather</h2>
                 <div class="search-box">
-                    <input type="text" id="citySearch" placeholder="Enter city name...">
+                    <input type="text" id="citySearch" placeholder="Enter city name (e.g., London, Paris, Tokyo)...">
                     <button id="searchBtn" class="btn btn-primary">Search</button>
                 </div>
                 <div id="searchError" class="error-message"></div>
             </div>
 
             <!-- Current Weather Display -->
-            <div id="currentWeather" class="weather-display" style="display: none;">
+            <div id="currentWeather" class="weather-display card" style="display: none;">
                 <h2>Current Weather</h2>
                 <div class="weather-card">
                     <div class="weather-main">
@@ -92,31 +98,84 @@
                     </div>
                     <div class="weather-details">
                         <div class="detail-item">
-                            <span class="label">Feels Like:</span>
+                            <span class="label">🌡️ Feels Like:</span>
                             <span id="weatherFeels"></span>
                         </div>
                         <div class="detail-item">
-                            <span class="label">Humidity:</span>
+                            <span class="label">💧 Humidity:</span>
                             <span id="weatherHumidity"></span>
                         </div>
                         <div class="detail-item">
-                            <span class="label">Wind Speed:</span>
+                            <span class="label">💨 Wind Speed:</span>
                             <span id="weatherWind"></span>
                         </div>
                         <div class="detail-item">
-                            <span class="label">Pressure:</span>
+                            <span class="label">🎈 Pressure:</span>
                             <span id="weatherPressure"></span>
                         </div>
                     </div>
-                    <button id="saveLocationBtn" class="btn btn-secondary">Save Location</button>
+                    <button id="saveLocationBtn" class="btn btn-primary">💾 Save This Location</button>
                 </div>
             </div>
 
             <!-- Saved Locations -->
-            <div class="locations-section">
-                <h2>Saved Locations</h2>
-                <button id="refreshLocationsBtn" class="btn btn-secondary">Refresh</button>
+            <div class="locations-section card">
+                <div class="section-header">
+                    <h2>📍 My Saved Locations</h2>
+                    <button id="refreshLocationsBtn" class="btn btn-secondary">🔄 Refresh</button>
+                </div>
                 <div id="locationsList" class="locations-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>👤 My Profile</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="profile-info">
+                    <div class="profile-avatar">👤</div>
+                    <h3 id="profileName">User Name</h3>
+                    <p id="profileEmail">user@example.com</p>
+                    <p class="profile-date">Member since: <span id="profileCreated"></span></p>
+                </div>
+
+                <button id="editProfileBtn" class="btn btn-primary">✏️ Edit Profile</button>
+
+                <!-- Edit Profile Form -->
+                <form id="editProfileForm" style="display: none;">
+                    <h3>Edit Profile</h3>
+                    <div class="form-group">
+                        <label for="editName">Name</label>
+                        <input type="text" id="editName" placeholder="Enter new name" minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email</label>
+                        <input type="email" id="editEmail" placeholder="Enter new email">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPassword">New Password (optional)</label>
+                        <input type="password" id="editPassword" placeholder="Leave blank to keep current" minlength="6">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+                        <button type="button" id="cancelEditBtn" class="btn btn-secondary">Cancel</button>
+                    </div>
+                    <div id="editError" class="error-message"></div>
+                    <div id="editSuccess" class="success-message"></div>
+                </form>
+
+                <!-- Profile Stats -->
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statLocations">0</span>
+                        <span class="stat-label">Saved Locations</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
