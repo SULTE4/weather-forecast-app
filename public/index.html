@@ -114,8 +114,21 @@
                             <span id="weatherPressure"></span>
                         </div>
                     </div>
-                    <button id="saveLocationBtn" class="btn btn-primary">💾 Save This Location</button>
+                    <div class="weather-actions">
+                        <button id="saveLocationBtn" class="btn btn-primary">💾 Save This Location</button>
+                        <button id="viewForecastBtn" class="btn btn-secondary">📅 View 5-Day Forecast</button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- 5-Day Forecast Display -->
+            <div id="forecastSection" class="forecast-section card" style="display: none;">
+                <div class="section-header">
+                    <h2>📅 5-Day Weather Forecast</h2>
+                    <button id="closeForecastBtn" class="btn btn-secondary">✖ Close</button>
+                </div>
+                <h3 id="forecastCity" class="forecast-city"></h3>
+                <div id="forecastDays" class="forecast-days"></div>
             </div>
 
             <!-- Saved Locations -->
