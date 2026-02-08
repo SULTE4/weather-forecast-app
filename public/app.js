@@ -2,7 +2,7 @@
 const API_URL = window.location.origin;
 
 // State Management
-let authToken = localStorage.getItem('authToken');
+let isLoggedIn = false;
 let currentWeatherData = null;
 
 // DOM Elements
@@ -22,11 +22,26 @@ const locationsList = document.getElementById('locationsList');
 
 // Initialize App
 function init() {
-    if (authToken) {
-        loadUserProfile();
-        showApp();
-        loadLocations();
-    } else {
+    checkAuth();
+}
+
+// Check if user is authenticated
+async function checkAuth() {
+    try {
+        const response = await fetch(`${API_URL}/api/users/profile`, {
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const user = await response.json();
+            userName.textContent = user.name;
+            isLoggedIn = true;
+            showApp();
+            loadLocations();
+        } else {
+            showAuth();
+        }
+    } catch (error) {
         showAuth();
     }
 }
@@ -75,17 +90,17 @@ registerForm.addEventListener('submit', async (e) => {
         const response = await fetch(`${API_URL}/api/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ name, email, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            authToken = data.token;
-            localStorage.setItem('authToken', authToken);
+            isLoggedIn = true;
+            userName.textContent = data.user.name;
             registerForm.reset();
             errorDiv.textContent = '';
-            loadUserProfile();
             showApp();
             loadLocations();
         } else {
@@ -107,17 +122,17 @@ loginForm.addEventListener('submit', async (e) => {
         const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            authToken = data.token;
-            localStorage.setItem('authToken', authToken);
+            isLoggedIn = true;
+            userName.textContent = data.user.name;
             loginForm.reset();
             errorDiv.textContent = '';
-            loadUserProfile();
             showApp();
             loadLocations();
         } else {
@@ -129,28 +144,19 @@ loginForm.addEventListener('submit', async (e) => {
 });
 
 // Logout
-logoutBtn.addEventListener('click', () => {
-    authToken = null;
-    localStorage.removeItem('authToken');
-    currentWeather.style.display = 'none';
-    showAuth();
-});
-
-// Load User Profile
-async function loadUserProfile() {
+logoutBtn.addEventListener('click', async () => {
     try {
-        const response = await fetch(`${API_URL}/api/users/profile`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
+        await fetch(`${API_URL}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
         });
-
-        if (response.ok) {
-            const user = await response.json();
-            userName.textContent = user.name;
-        }
+        isLoggedIn = false;
+        currentWeather.style.display = 'none';
+        showAuth();
     } catch (error) {
-        console.error('Failed to load profile:', error);
+        console.error('Logout error:', error);
     }
-}
+});
 
 // Search Weather
 searchBtn.addEventListener('click', searchWeather);
@@ -169,7 +175,7 @@ async function searchWeather() {
 
     try {
         const response = await fetch(`${API_URL}/api/weather/current?city=${encodeURIComponent(city)}`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -208,10 +214,8 @@ saveLocationBtn.addEventListener('click', async () => {
     try {
         const response = await fetch(`${API_URL}/api/locations`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
                 city: currentWeatherData.city,
                 country: currentWeatherData.country,
@@ -239,7 +243,7 @@ refreshLocationsBtn.addEventListener('click', loadLocations);
 async function loadLocations() {
     try {
         const response = await fetch(`${API_URL}/api/locations`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -286,7 +290,7 @@ window.deleteLocation = async (id) => {
     try {
         const response = await fetch(`${API_URL}/api/locations/${id}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${authToken}` }
+            credentials: 'include'
         });
 
         if (response.ok) {
