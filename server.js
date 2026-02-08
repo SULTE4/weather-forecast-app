@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0'; // Listen on all interfaces for Railway
 const JWT_SECRET = process.env.JWT_SECRET;
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 
@@ -327,12 +328,15 @@ async function run() {
         usercollection = db.collection('users');
         locationcollection = db.collection('locations');
         
-        app.listen(PORT,() =>{
-            console.log('server is running on port', PORT)
-        })
+        // Listen on 0.0.0.0 for Railway (not just localhost)
+        app.listen(PORT, HOST, () =>{
+            console.log(`✅ Server is running on ${HOST}:${PORT}`);
+            console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🚀 Ready to accept connections!`);
+        });
     }catch(err){
-        console.log(err);
-        return
+        console.error('❌ Failed to start server:', err);
+        process.exit(1);
     }
 }
 
