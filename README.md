@@ -97,7 +97,6 @@ weather-forecast-app/
    ```bash
    # If using local MongoDB
    mongod
-   
    # Or use MongoDB Atlas cloud connection string
    ```
 
@@ -378,94 +377,6 @@ All endpoints return appropriate HTTP status codes:
 - JWT token errors
 - Duplicate key errors (409)
 
-## 🌐 Deployment
-
-The application is ready to deploy to platforms like Render, Railway, or Replit.
-
-### Render Deployment
-1. Create a new Web Service
-2. Connect your GitHub repository
-3. Add environment variables:
-   - `MONGO_URI` (use MongoDB Atlas)
-   - `JWT_SECRET`
-   - `WEATHER_API_KEY`
-   - `NODE_ENV=production`
-4. Deploy
-
-### Railway Deployment
-1. Create a new project
-2. Connect your GitHub repository
-3. Add environment variables (same as above)
-4. Deploy automatically
-
-### Environment Variables for Production
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/weatherDB
-JWT_SECRET=your_super_secure_random_secret_key_here
-WEATHER_API_KEY=your_api_key_from_openweathermap
-NODE_ENV=production
-```
-
-## 📝 Features
-
-✅ User registration and authentication
-✅ JWT token-based security (7-day expiration)
-✅ Password hashing with bcryptjs (saltRounds: 12)
-✅ Middleware for token verification
-✅ Joi validation for all inputs
-✅ Real-time weather data from OpenWeatherMap API
-✅ 5-day weather forecast integration
-✅ Save and manage favorite locations
-✅ Responsive gradient design
-✅ Global error handling middleware
-✅ RESTful API architecture
-✅ MongoDB + Mongoose integration
-✅ Clean and modular code structure
-✅ Comprehensive API documentation
-
-## 🎯 Final Project Requirements Coverage
-
-| Requirement | Points | Status | Implementation |
-|-------------|--------|--------|----------------|
-| **1. Project Setup** | 10 | ✅ | Node.js, Express, modular structure, README with docs |
-| **2. Database & Models** | 10 | ✅ | MongoDB, Mongoose, User + Location collections |
-| **3. API Endpoints** | 20 | ✅ | Auth routes (register, login), User routes (profile), Location CRUD, Weather API |
-| **4. Auth & Security** | 10 | ✅ | JWT tokens, bcrypt hashing, token verification middleware |
-| **5. Validation & Error** | 5 | ✅ | Joi validation, global error handler, meaningful error messages |
-| **6. Deployment** | 10 | 🔄 | Ready for Render/Railway deployment |
-| **7. Defence** | 35 | 📝 | Pending presentation |
-
-**Total**: 65/100 points (implementation complete, defence pending)
-
-### Detailed Requirements Met:
-
-✅ **Project Setup (10 pts)**
-- Node.js and Express.js server
-- Modular structure (config, models, middleware, public)
-- README.md with overview, setup, and API documentation
-
-✅ **Database & Models (10 pts)**
-- MongoDB database
-- Mongoose for schema creation
-- Two collections: User (name, email, password) and Location (city, country, lat, lon, etc.)
-
-✅ **API Endpoints & Routing (20 pts)**
-- Auth routes: POST /api/auth/register, POST /api/auth/login
-- User routes: GET /api/users/profile, PUT /api/users/profile
-- Location routes: POST, GET, GET/:id, PUT/:id, DELETE/:id
-- External API: OpenWeatherMap integration (current + forecast)
-
-✅ **Authentication & Security (10 pts)**
-- JWT for secure authentication
-- Protected private endpoints with middleware
-- bcrypt password hashing (saltRounds: 12)
-
-✅ **Validation & Error Handling (5 pts)**
-- Joi validation for email, password, and all inputs
-- Error handling with appropriate status codes (400, 401, 404, 409, 500)
-- Global error-handling middleware
-
 ## 🧪 Testing the API
 
 ### Using cURL:
@@ -499,25 +410,8 @@ curl -X POST http://localhost:5000/api/locations \
 4. Test all endpoints
 
 ## 👨‍💻 Author
-
-**Sultanbek**
-- GitHub: [@SULTE4](https://github.com/SULTE4)
-- Location: Astana, Kazakhstan
-- Bio: Software Engineer | Algorithms | Microservices | Design Patterns
+[@SULTE4](https://github.com/SULTE4)
 
 ## 📄 License
 
 This project is licensed under the MIT License.
-
-## 🙏 Acknowledgments
-
-- OpenWeatherMap for providing the weather API
-- MongoDB for the database solution
-- Express.js community for excellent documentation
-- JWT for secure authentication
-
----
-
-**Project Status**: ✅ Complete and ready for deployment
-
-**Note**: This project was created as a final project for a Node.js and Express.js course. It demonstrates proficiency in full-stack development, API integration, JWT authentication, validation, error handling, and database management.
